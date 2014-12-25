@@ -1,3 +1,9 @@
+<?php
+session_start();
+$error = isset($_SESSION['error']) ? $_SESSION['error'] : null;
+unset($_SESSION['error']);
+?>
+
 <html>
 <head>
     <title>CSV2PDF</title>
@@ -12,20 +18,28 @@
 
     <div class="row">
         <div class="col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 col-xs-10 col-xs-offset-1">
+            <?php if ($error) { ?>
+                <div class="alert alert-danger alert-dismissible" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <?= $error; ?>
+                </div>
+            <?php } ?>
             <div class="well well-lg">
-                <form action="convert.php" method="post" enctype="multipart/form-data" class="form-horizontal" target="_blank">
+                <form action="convert.php" method="post" enctype="multipart/form-data" class="form-horizontal">
                     <div class="form-group">
                         <label for="csv" class="col-md-3 col-sm-3 control-label">CSV файл</label>
 
                         <div class="col-md-5 col-sm-5 ">
-                            <input type="file" name="csv" id="csv" class="form-control">
+                            <input type="file" name="csv" id="csv" class="form-control" required="required"
+                                   accept="text/csv">
                         </div>
 
-                        <button type="submit" class="btn btn-primary" title="Преобразовать" name="convert">
-                            .<span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
-                        </button>
+                        <button type="submit" class="btn btn-primary glyphicon glyphicon-refresh" title="Преобразовать"
+                                name="convert"></button>
                     </div>
                 </form>
+
             </div>
         </div>
     </div>
