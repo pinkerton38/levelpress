@@ -13,7 +13,7 @@
     <div class="row">
         <div class="col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 col-xs-10 col-xs-offset-1">
             <div class="well well-lg">
-                <form action="convert.php" method="post" enctype="multipart/form-data" class="form-horizontal">
+                <form action="convert.php" method="post" enctype="multipart/form-data" class="form-horizontal" target="_blank">
                     <div class="form-group">
                         <label for="csv" class="col-md-3 col-sm-3 control-label">CSV файл</label>
 
@@ -31,7 +31,7 @@
     </div>
 </div>
 
-<script src="bootstrap/js/jquery-2.1.3.min.js"></script>
+<script src="js/jquery-2.1.3.min.js"></script>
 <script src="bootstrap/js/bootstrap.min.js"></script>
 </body>
 </html>

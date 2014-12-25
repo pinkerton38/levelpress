@@ -1,0 +1,33 @@
+body{
+    font-size: 12px;
+    font-family: Arial, Helvetica, Sans-Serif;
+    color:#313131;
+}
+
+#logo {
+    margin-bottom: 20px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td {
+    padding: 4px;
+    border-bottom: 2px solid #ccc;
+}
+
+td.product-name {
+    padding-top: 20px;
+    font-weight: bold;
+    border-bottom: none;
+}
+
+td.product-color {
+    padding-left: 20px;
+}
+
+td.bold{
+    font-weight: bold;
+}
