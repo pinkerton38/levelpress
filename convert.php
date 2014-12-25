@@ -202,7 +202,7 @@ try {
     $mpdf->WriteHTML($html, 2);
 
     $filename = $_FILES['csv']['name'] . '.pdf';
-    $mpdf->Output($filename, 'I');
+    $mpdf->Output($filename, 'D');
 } catch (Exception $e) {
     session_start();
     $_SESSION['error'] = '<strong>Ошибка!</strong> ' . $e->getMessage();
