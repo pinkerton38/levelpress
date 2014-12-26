@@ -217,11 +217,12 @@ try {
     require 'mpdf/mpdf.php';
 
     $mpdf = new mPDF('', 'A4', '', '', 8, 8, 12, 8, 0, 0);
-    $mpdf->SetHTMLHeader($sizesHtml);
 
     $css = file_get_contents('css/pdf.css');
     $mpdf->WriteHTML($css, 1);
 
+    $mpdf->AddPage();
+    $mpdf->SetHTMLHeader($sizesHtml);
     $mpdf->WriteHTML($html, 2);
 
     $filename = $_FILES['csv']['name'] . '.pdf';
