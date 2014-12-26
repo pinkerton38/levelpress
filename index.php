@@ -28,14 +28,14 @@ unset($_SESSION['error']);
             <div class="well well-lg">
                 <form action="convert.php" method="post" enctype="multipart/form-data" class="form-horizontal">
                     <div class="form-group">
-                        <label for="csv" class="col-md-3 col-sm-3 control-label">CSV файл</label>
+                        <label for="csv" class="col-md-3 col-sm-3 control-label">CSV file</label>
 
                         <div class="col-md-5 col-sm-5 ">
                             <input type="file" name="csv" id="csv" class="form-control" required="required"
                                    accept="text/csv">
                         </div>
 
-                        <button type="submit" class="btn btn-primary glyphicon glyphicon-refresh" title="Преобразовать"
+                        <button type="submit" class="btn btn-primary glyphicon glyphicon-refresh" title="Convert"
                                 name="convert"></button>
                     </div>
                 </form>
