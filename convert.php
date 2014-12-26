@@ -33,14 +33,14 @@ try {
 
     global $rules;
     $rules = array(
-        'small' => array('s'),
-        'medium' => array('m'),
-        'large' => array('l'),
-        'x-large' => array('xl', 'x-l', 'x large'),
-        '2x-large' => array('2xl', '2x-l', '2x large'),
-        '3x-large' => array('3xl', '3x-l', '3x large'),
-        '4x-large' => array('4xl', '4x-l', '4x large'),
-        '5x-large' => array('5xl', '5x-l', '5x large')
+        's' => array('small'),
+        'm' => array('medium'),
+        'l' => array('large'),
+        'xl' => array('x-large', 'x-l', 'x large'),
+        '2xl' => array('2x-large', '2x-l', '2x large'),
+        '3xl' => array('3x-large', '3x-l', '3x large'),
+        '4xl' => array('4x-large', '4x-l', '4x large'),
+        '5xl' => array('5x-large', '5x-l', '5x large')
     );
 
     function processSize($size)
@@ -145,7 +145,7 @@ try {
     $processed = array();
     foreach ($data as $row) {
         $sizes[] = $row['size'];
-        $processed[$row['name']][$row['color']][$row['size']] = $row['quantity'];
+        $processed[$row['name']][$row['type']][$row['color']][$row['size']] = $row['quantity'];
     }
     unset($data);
 
@@ -170,7 +170,7 @@ try {
     $html .= '<tr>';
     $html .= '<td class="bold">Product</td>';
     foreach ($sizes as $size) {
-        $html .= '<td class="bold">' . $size . '</td>';
+        $html .= '<td class="bold">' . strtoupper($size) . '</td>';
     }
     $html .= '<td class="bold">total</td>';
     $html .= '</tr>';
@@ -179,18 +179,25 @@ try {
         $html .= '<tr>';
         $html .= '<td class="product-name" colspan="' . count($sizes) . '">' . $name . '</td>';
         $html .= '</tr>';
-        $colors = array_keys($row);
-        foreach ($colors as $color) {
+        $types = array_keys($row);
+        foreach ($types as $type) {
             $html .= '<tr>';
-            $html .= '<td class="product-color">' . $color . '</td>';
-            $total = 0;
-            foreach ($sizes as $size) {
-                $quantity = isset($processed[$name][$color][$size]) ? $processed[$name][$color][$size] : '0';
-                $total += (int)$quantity;
-                $html .= '<td>' . $quantity . '</td>';
-            }
-            $html .= '<td class="bold">' . $total . '</td>';
+            $html .= '<td class="product-type" colspan="' . count($sizes) . '">' . $type . '</td>';
             $html .= '</tr>';
+
+            $colors = array_keys($processed[$name][$type]);
+            foreach ($colors as $color) {
+                $html .= '<tr>';
+                $html .= '<td class="product-color">' . $color . '</td>';
+                $total = 0;
+                foreach ($sizes as $size) {
+                    $quantity = isset($processed[$name][$type][$color][$size]) ? $processed[$name][$type][$color][$size] : '';
+                    $total += (int)$quantity;
+                    $html .= '<td>' . $quantity . '</td>';
+                }
+                $html .= '<td class="bold">' . $total . '</td>';
+                $html .= '</tr>';
+            }
         }
     }
 
