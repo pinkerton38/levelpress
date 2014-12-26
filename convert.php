@@ -3,7 +3,7 @@ function writeLog($filename, $data)
 {
     $f = fopen($filename, 'a+');
     if (!$f) {
-        throw new Exception('Ошибка записи лог файла. Проверьте права доступа.');
+        throw new Exception('Error writing to the log file. Check the permissions.');
     }
 
     fwrite($f, $data . PHP_EOL);
@@ -12,15 +12,15 @@ function writeLog($filename, $data)
 
 try {
     if (!isset($_POST['convert'])) {
-        throw new Exception('Доступ запрещен.');
+        throw new Exception('Access denied.');
     }
 
     if (!isset($_FILES['csv']) or !$_FILES['csv']['size']) {
-        throw new Exception('Нет файла.');
+        throw new Exception('File is empty or absent.');
     }
 
     if ($_FILES['csv']['type'] != 'text/csv') {
-        throw new Exception('Неверный формат файла: поддерживается только формат csv.');
+        throw new Exception('Invalid file format: only supported format csv.');
     }
 
 
@@ -95,7 +95,7 @@ try {
 
     $file = fopen($_FILES['csv']['tmp_name'], 'r');
     if (!$file) {
-        throw new Exception('Не удалось открыть загруженный файл.');
+        throw new Exception('Could not open the uploaded file.');
     }
 
     $data = array();
@@ -156,22 +156,23 @@ try {
     <div id="logo">
         <img src="img/logo.jpg">
     </div>
-    <div id="date">' . date('d.m.Y H:i:s', time()) . '</div>
-    <div id="summary">Количество товаров: ' . $productCount . ' шт.</div>
-    <div id="summary">Пропущено строк: ' . $passedRowCount . ' шт.</div>';
+    <div id="date">Report: ' . date('m/d/Y H:i', time()) . '</div>
+    <div id="summary">Number of products: ' . $productCount . '</div>
+    <div id="summary">Number of erroneous lines: ' . $passedRowCount . '</div>';
 
     $log = 'log-' . date('d-m-Y_H-m-s', time()) . '.txt';
-    writeLog($log, 'Импортировано строк: ' . $productCount);
-    writeLog($log, 'Записано в PDF: ' . $productCount);
-    writeLog($log, 'Пропущено строк: ' . $passedRowCount);
+    writeLog($log, 'Number of imported rows: ' . $productCount);
+    writeLog($log, 'Written to PDF: ' . $productCount);
+    writeLog($log, 'Number of erroneous lines: ' . $passedRowCount);
 
     $html .= '<br><table class="table">';
 
     $html .= '<tr>';
-    $html .= '<td class="bold">Товар</td>';
+    $html .= '<td class="bold">Product</td>';
     foreach ($sizes as $size) {
-        $html .= '<td>' . $size . '</td>';
+        $html .= '<td class="bold">' . $size . '</td>';
     }
+    $html .= '<td class="bold">total</td>';
     $html .= '</tr>';
 
     foreach ($processed as $name => $row) {
@@ -182,10 +183,13 @@ try {
         foreach ($colors as $color) {
             $html .= '<tr>';
             $html .= '<td class="product-color">' . $color . '</td>';
+            $total = 0;
             foreach ($sizes as $size) {
                 $quantity = isset($processed[$name][$color][$size]) ? $processed[$name][$color][$size] : '0';
+                $total += (int)$quantity;
                 $html .= '<td>' . $quantity . '</td>';
             }
+            $html .= '<td class="bold">' . $total . '</td>';
             $html .= '</tr>';
         }
     }
@@ -205,7 +209,7 @@ try {
     $mpdf->Output($filename, 'D');
 } catch (Exception $e) {
     session_start();
-    $_SESSION['error'] = '<strong>Ошибка!</strong> ' . $e->getMessage();
+    $_SESSION['error'] = '<strong>Error!</strong> ' . $e->getMessage();
 
     header('Location: ' . $_SERVER['HTTP_REFERER']);
 }
