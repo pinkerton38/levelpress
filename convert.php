@@ -142,77 +142,115 @@ try {
     $productCount = count($data);
 
     $sizes = array();
-    $processed = array();
+    $dataByName = array();
     foreach ($data as $row) {
         $sizes[] = $row['size'];
-        $processed[$row['name']][$row['type']][$row['color']][$row['size']] = $row['quantity'];
+        $dataByName[$row['name']][$row['type']][$row['color']][$row['size']] = $row['quantity'];
     }
+
+    $dataByType = array();
+    foreach ($data as $row) {
+        if (!isset($dataByType[$row['type']][$row['color']][$row['size']])) {
+            $dataByType[$row['type']][$row['color']][$row['size']] = 0;
+        }
+        $dataByType[$row['type']][$row['color']][$row['size']] += (int)$row['quantity'];
+    }
+
     unset($data);
 
     $sizes = array_unique($sizes);
     usort($sizes, 'cmpSizes');
 
-    $html = '
-    <div id="logo">
-        <img src="img/logo.jpg">
-    </div>
-    <div id="date">Report: ' . date('m/d/Y H:i', time()) . '</div>
-    <div id="summary">Number of products: ' . $productCount . '</div>
-    <div id="summary">Number of erroneous lines: ' . $passedRowCount . '</div>';
+    $header .= '<br><table class="table">';
+    $header .= '<tr>';
+    $header .= '<td class="bold" style="width: 30%;">Product</td>';
+    foreach ($sizes as $size) {
+        $header .= '<td class="bold">' . strtoupper($size) . '</td>';
+    }
+    $header .= '<td class="bold">total</td>';
+    $header .= '</tr>';
+    $header .= '</table>';
+
+    $headHtml = '<div id="logo">
+                <img src="img/logo.jpg">
+            </div>
+            <div id="date">Report: ' . date('m/d/Y H:i', time()) . '</div>
+            <div id="summary">Number of products: ' . $productCount . '</div>
+            <div id="summary">Number of erroneous lines: ' . $passedRowCount . '</div>';
+
+    $htmlByType = '';
+    foreach ($dataByType as $type => $row) {
+        $htmlByType .= '<br><table class="table">';
+
+        $htmlByType .= '<tr>';
+        $htmlByType .= '<td class="product-name" colspan="' . count($sizes) . '">' . $type . '</td>';
+        $htmlByType .= '</tr>';
+
+        $htmlByType .= '<tr>';
+        $htmlByType .= '<td class="bold" style="width: 30%;"></td>';
+        foreach ($sizes as $size) {
+            $htmlByType .= '<td class="bold">' . strtoupper($size) . '</td>';
+        }
+        $htmlByType .= '<td class="bold">total</td>';
+        $htmlByType .= '</tr>';
+
+        $colors = array_keys($row);
+        foreach ($colors as $color) {
+            $htmlByType .= '<tr>';
+            $htmlByType .= '<td class="product-color">' . $color . '</td>';
+            $total = 0;
+            foreach ($sizes as $size) {
+                $quantity = isset($dataByType[$type][$color][$size]) ? $dataByType[$type][$color][$size] : '0';
+                $total += (int)$quantity;
+                $htmlByType .= '<td>' . $quantity . '</td>';
+            }
+            $htmlByType .= '<td class="bold">' . $total . '</td>';
+            $htmlByType .= '</tr>';
+        }
+        $htmlByType .= '</table>';
+    }
+
+    $htmlByName .= '<br><table class="table">';
+    $htmlByName .= '<tr>';
+    $htmlByName .= '<td class="bold" style="width: 30%;">Product</td>';
+    foreach ($sizes as $size) {
+        $htmlByName .= '<td class="bold">' . strtoupper($size) . '</td>';
+    }
+    $htmlByName .= '<td class="bold">total</td>';
+    $htmlByName .= '</tr>';
+
+    foreach ($dataByName as $name => $row) {
+        $htmlByName .= '<tr>';
+        $htmlByName .= '<td class="product-name" colspan="' . count($sizes) . '">' . $name . '</td>';
+        $htmlByName .= '</tr>';
+        $types = array_keys($row);
+        foreach ($types as $type) {
+            $htmlByName .= '<tr>';
+            $htmlByName .= '<td class="product-type" colspan="' . count($sizes) . '">' . $type . '</td>';
+            $htmlByName .= '</tr>';
+
+            $colors = array_keys($dataByName[$name][$type]);
+            foreach ($colors as $color) {
+                $htmlByName .= '<tr>';
+                $htmlByName .= '<td class="product-color">' . $color . '</td>';
+                $total = 0;
+                foreach ($sizes as $size) {
+                    $quantity = isset($dataByName[$name][$type][$color][$size]) ? $dataByName[$name][$type][$color][$size] : '0';
+                    $total += (int)$quantity;
+                    $htmlByName .= '<td>' . $quantity . '</td>';
+                }
+                $htmlByName .= '<td class="bold">' . $total . '</td>';
+                $htmlByName .= '</tr>';
+            }
+        }
+    }
+    $htmlByName .= '</table>';
 
     $log = 'log-' . date('d-m-Y_H-m-s', time()) . '.txt';
     writeLog($log, 'Number of imported rows: ' . $productCount);
     writeLog($log, 'Written to PDF: ' . $productCount);
     writeLog($log, 'Number of erroneous lines: ' . $passedRowCount);
 
-    $sizesHtml .= '<br><table class="table">';
-    $sizesHtml .= '<tr>';
-    $sizesHtml .= '<td class="bold" style="width: 30%;">Product</td>';
-    foreach ($sizes as $size) {
-        $sizesHtml .= '<td class="bold">' . strtoupper($size) . '</td>';
-    }
-    $sizesHtml .= '<td class="bold">total</td>';
-    $sizesHtml .= '</tr>';
-    $sizesHtml .= '</table>';
-
-
-    $html .= '<br><table class="table">';
-
-    $html .= '<tr>';
-    $html .= '<td class="bold" style="width: 30%;">Product</td>';
-    foreach ($sizes as $size) {
-        $html .= '<td class="bold">' . strtoupper($size) . '</td>';
-    }
-    $html .= '<td class="bold">total</td>';
-    $html .= '</tr>';
-
-    foreach ($processed as $name => $row) {
-        $html .= '<tr>';
-        $html .= '<td class="product-name" colspan="' . count($sizes) . '">' . $name . '</td>';
-        $html .= '</tr>';
-        $types = array_keys($row);
-        foreach ($types as $type) {
-            $html .= '<tr>';
-            $html .= '<td class="product-type" colspan="' . count($sizes) . '">' . $type . '</td>';
-            $html .= '</tr>';
-
-            $colors = array_keys($processed[$name][$type]);
-            foreach ($colors as $color) {
-                $html .= '<tr>';
-                $html .= '<td class="product-color">' . $color . '</td>';
-                $total = 0;
-                foreach ($sizes as $size) {
-                    $quantity = isset($processed[$name][$type][$color][$size]) ? $processed[$name][$type][$color][$size] : '0';
-                    $total += (int)$quantity;
-                    $html .= '<td>' . $quantity . '</td>';
-                }
-                $html .= '<td class="bold">' . $total . '</td>';
-                $html .= '</tr>';
-            }
-        }
-    }
-
-    $html .= '</table>';
 
     require 'mpdf/mpdf.php';
 
@@ -222,11 +260,15 @@ try {
     $mpdf->WriteHTML($css, 1);
 
     $mpdf->AddPage();
-    $mpdf->SetHTMLHeader($sizesHtml);
-    $mpdf->WriteHTML($html, 2);
+    $mpdf->WriteHTML($headHtml, 2);
+    $mpdf->WriteHTML($htmlByType, 2);
+
+    $mpdf->AddPage();
+    $mpdf->SetHTMLHeader($header);
+    $mpdf->WriteHTML($htmlByName, 2);
 
     $filename = $_FILES['csv']['name'] . '.pdf';
-    $mpdf->Output($filename, 'D');
+    $mpdf->Output($filename, 'I');
 } catch (Exception $e) {
     session_start();
     $_SESSION['error'] = '<strong>Error!</strong> ' . $e->getMessage();
