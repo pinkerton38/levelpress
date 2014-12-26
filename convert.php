@@ -165,10 +165,21 @@ try {
     writeLog($log, 'Written to PDF: ' . $productCount);
     writeLog($log, 'Number of erroneous lines: ' . $passedRowCount);
 
+    $sizesHtml .= '<br><table class="table">';
+    $sizesHtml .= '<tr>';
+    $sizesHtml .= '<td class="bold" style="width: 30%;">Product</td>';
+    foreach ($sizes as $size) {
+        $sizesHtml .= '<td class="bold">' . strtoupper($size) . '</td>';
+    }
+    $sizesHtml .= '<td class="bold">total</td>';
+    $sizesHtml .= '</tr>';
+    $sizesHtml .= '</table>';
+
+
     $html .= '<br><table class="table">';
 
     $html .= '<tr>';
-    $html .= '<td class="bold">Product</td>';
+    $html .= '<td class="bold" style="width: 30%;">Product</td>';
     foreach ($sizes as $size) {
         $html .= '<td class="bold">' . strtoupper($size) . '</td>';
     }
@@ -191,7 +202,7 @@ try {
                 $html .= '<td class="product-color">' . $color . '</td>';
                 $total = 0;
                 foreach ($sizes as $size) {
-                    $quantity = isset($processed[$name][$type][$color][$size]) ? $processed[$name][$type][$color][$size] : '';
+                    $quantity = isset($processed[$name][$type][$color][$size]) ? $processed[$name][$type][$color][$size] : '0';
                     $total += (int)$quantity;
                     $html .= '<td>' . $quantity . '</td>';
                 }
@@ -205,7 +216,8 @@ try {
 
     require 'mpdf/mpdf.php';
 
-    $mpdf = new mPDF('', 'A4', '', '', 8, 8, 8, 8, 0, 0);
+    $mpdf = new mPDF('', 'A4', '', '', 8, 8, 12, 8, 0, 0);
+    $mpdf->SetHTMLHeader($sizesHtml);
 
     $css = file_get_contents('css/pdf.css');
     $mpdf->WriteHTML($css, 1);
