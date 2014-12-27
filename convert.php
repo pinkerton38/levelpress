@@ -28,7 +28,7 @@ try {
     if ($availableSizes === null) {
         throw new Exception('Invalid sizes.json file.');
     }
-    $availableSizes = (array) $availableSizes;
+    $availableSizes = (array)$availableSizes;
 
     global $availableColors;
     $availableColors = json_decode(file_get_contents('config/colors.json'));
@@ -120,9 +120,23 @@ try {
         return ($a < $b) ? -1 : 1;
     }
 
-    $file = fopen($_FILES['csv']['tmp_name'], 'r');
+    $file = fopen($_FILES['csv']['tmp_name'], 'r+');
     if (!$file) {
         throw new Exception('Could not open the uploaded file.');
+    }
+
+    $d = fread($file, filesize($_FILES['csv']['tmp_name']));
+    if (strpos($d, "\r") !== false) {
+        $d = str_replace("\r", "\n", $d);
+        fseek($file, 0);
+        $a = fwrite($file, $d);
+        fclose($file);
+        $file = fopen($_FILES['csv']['tmp_name'], 'r');
+        if (!$file) {
+            throw new Exception('Could not open the converted file.');
+        }
+    } else {
+        fseek($file, 0);
     }
 
     $data = array();
