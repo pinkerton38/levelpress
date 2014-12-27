@@ -28,6 +28,7 @@ try {
     if ($availableSizes === null) {
         throw new Exception('Invalid sizes.json file.');
     }
+    $availableSizes = (array) $availableSizes;
 
     global $availableColors;
     $availableColors = json_decode(file_get_contents('config/colors.json'));
