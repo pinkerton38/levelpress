@@ -23,39 +23,37 @@ try {
         throw new Exception('Invalid file format: only supported format csv.');
     }
 
+    global $availableSizes;
+    $availableSizes = json_decode(file_get_contents('config/sizes.json'));
+    if ($availableSizes === null) {
+        throw new Exception('Invalid sizes.json file.');
+    }
 
-    $defaultType = 'T-Shirt';
+    global $availableColors;
+    $availableColors = json_decode(file_get_contents('config/colors.json'));
+    if ($availableColors === null) {
+        throw new Exception('Invalid colors.json file.');
+    }
 
-    /** @var array $typesInName Типы, которые встречаются в названиях */
-    $typesInName = array(
-        'T-Shirt'
-    );
+    global $availableTypes;
+    $availableTypes = json_decode(file_get_contents('config/types.json'));
+    if ($availableTypes === null) {
+        throw new Exception('Invalid types.json file.');
+    }
 
-    global $rules;
-    $rules = array(
-        's' => array('small'),
-        'm' => array('medium'),
-        'l' => array('large'),
-        'xl' => array('x-large', 'x-l', 'x large'),
-        '2xl' => array('2x-large', '2x-l', '2x large'),
-        '3xl' => array('3x-large', '3x-l', '3x large'),
-        '4xl' => array('4x-large', '4x-l', '4x large'),
-        '5xl' => array('5x-large', '5x-l', '5x large')
-    );
-
-    function processSize($size)
+    function tryGetSize($value)
     {
-        global $rules;
+        global $availableSizes;
 
         $result = null;
 
-        foreach ($rules as $reference => $applicants) {
-            if ($size == $reference) {
+        foreach ($availableSizes as $reference => $applicants) {
+            if ($value == $reference) {
                 $result = $reference;
                 break;
             }
             foreach ($applicants as $applicant) {
-                if ($size == $applicant) {
+                if ($value == $applicant) {
                     $result = $reference;
                     break;
                 }
@@ -68,22 +66,50 @@ try {
         return $result;
     }
 
+    function tryGetType($value)
+    {
+        global $availableTypes;
+
+        foreach ($availableTypes as $availableType) {
+            $availableType = trim($availableType);
+            if (strtolower($availableType) == strtolower($value)) {
+                return $availableType;
+            }
+        }
+
+        return null;
+    }
+
+    function tryGetColor($value)
+    {
+        global $availableColors;
+
+        foreach ($availableColors as $availableColor) {
+            $availableColor = trim($availableColor);
+            if (strtolower($availableColor) == strtolower($value)) {
+                return $value;
+            }
+        }
+
+        return $value;
+    }
+
     function cmpSizes($a, $b)
     {
-        global $rules;
+        global $availableSizes;
 
         if ($a == $b) {
             return 0;
         }
 
-        foreach (array_keys($rules) as $pos => $reference) {
+        foreach (array_keys($availableSizes) as $pos => $reference) {
             if ($a == $reference) {
                 $a = $pos;
                 break;
             }
         }
 
-        foreach (array_keys($rules) as $pos => $reference) {
+        foreach (array_keys($availableSizes) as $pos => $reference) {
             if ($b == $reference) {
                 $b = $pos;
                 break;
@@ -102,39 +128,70 @@ try {
     $i = 0;
     $passedRowCount = 0;
     while ($row = fgetcsv($file)) {
+        $name = null;
+        $size = null;
+        $type = null;
+        $color = null;
+
         if ($row[0] == 'product_title') {
             $passedRowCount++;
             continue;
         }
 
-        $data[$i]['name'] = trim($row[0]);
+        $name = trim($row[0]);
 
         $complexColumn = explode('/', $row[1]);
+        foreach ($complexColumn as $complexItem) {
+            $complexItem = strtolower(trim($complexItem));
 
-        $size = processSize(strtolower(trim($complexColumn[0])));
-        if (!$size) {
-            $passedRowCount++;
-            continue;
+            if ($size === null) {
+                $size = tryGetSize($complexItem);
+                if ($size !== null) {
+                    continue;
+                }
+            }
+
+            if ($type === null) {
+                $type = tryGetType($complexItem);
+                if ($type !== null) {
+                    continue;
+                }
+            }
+
+            if ($color === null) {
+                $color = tryGetColor($complexItem);
+                if ($color !== null) {
+                    continue;
+                }
+            }
         }
-        $data[$i]['size'] = $size;
-        if (count($complexColumn) < 3) {
-            $data[$i]['color'] = trim($complexColumn[1]);
-            $find = false;
-            foreach ($typesInName as $typeInName) {
-                if (strpos($row[0], $typeInName) !== false) {
-                    $data[$i]['type'] = $typeInName;
-                    $find = true;
+
+        // попытка найти тип в названии
+        if ($type === null) {
+            foreach ($availableTypes as $availableType) {
+                if (strpos($data[$i]['name'], $availableType) !== false) {
+                    $type = $availableType;
                     break;
                 }
             }
-            if (!$find) {
-                $data[$i]['type'] = $defaultType;
+            if (!$type) {
+                $type = 'T-Shirt';
             }
-        } else {
-            $data[$i]['type'] = trim($complexColumn[1]);
-            $data[$i]['color'] = trim($complexColumn[2]);
         }
 
+        if ($color === null) {
+            $color = 'undefined';
+        }
+
+        if (!$name or !$type or !$color or !$size) {
+            $passedRowCount++;
+            continue;
+        }
+
+        $data[$i]['name'] = $name;
+        $data[$i]['size'] = $size;
+        $data[$i]['type'] = $type;
+        $data[$i]['color'] = $color;
         $data[$i]['quantity'] = trim($row[3]);
         $data[$i]['price'] = trim($row[4]);
         $i++;
