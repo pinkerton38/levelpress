@@ -42,6 +42,27 @@ try {
         throw new Exception('Invalid types.json file.');
     }
 
+    global $skippedWordsInType;
+    $skippedWordsInType = json_decode(file_get_contents('config/skipped_words_in_type.json'));
+    if ($skippedWordsInType === null) {
+        throw new Exception('Invalid skipped_words_in_type.json file.');
+    }
+
+    function tryGetName($value)
+    {
+        if (!strlen(trim($value))) {
+            return null;
+        }
+
+        global $skippedWordsInType;
+
+        foreach ($skippedWordsInType as $skippedWord) {
+            $value = trim(str_ireplace($skippedWord, '', $value));
+        }
+
+        return trim($value);
+    }
+
     function tryGetSize($value)
     {
         global $availableSizes;
@@ -70,10 +91,14 @@ try {
     function tryGetType($value)
     {
         global $availableTypes;
+        global $skippedWordsInType;
 
         foreach ($availableTypes as $availableType) {
             $availableType = trim($availableType);
             if (strtolower($availableType) == strtolower($value)) {
+                foreach ($skippedWordsInType as $skippedWord) {
+                    $availableType = trim(str_ireplace($skippedWord, '', $availableType));
+                }
                 return $availableType;
             }
         }
@@ -142,6 +167,7 @@ try {
     $data = array();
     $i = 0;
     $passedRowCount = 0;
+    $unrecognizedRows = array();
     while ($row = fgetcsv($file)) {
         $name = null;
         $size = null;
@@ -150,10 +176,11 @@ try {
 
         if ($row[0] == 'product_title') {
             $passedRowCount++;
+            $unrecognizedRows[] = implode(', ', $row);
             continue;
         }
 
-        $name = trim($row[0]);
+        $name = tryGetName($row[0]);
 
         $complexColumn = explode('/', $row[1]);
         foreach ($complexColumn as $complexItem) {
@@ -195,11 +222,12 @@ try {
         }
 
         if ($color === null) {
-            $color = 'undefined';
+            $color = 'black';
         }
 
         if (!$name or !$type or !$color or !$size) {
             $passedRowCount++;
+            $unrecognizedRows[] = implode(', ', $row);
             continue;
         }
 
@@ -318,6 +346,19 @@ try {
     }
     $htmlByName .= '</table>';
 
+    $unrecognizedHtml = null;
+    if (count($unrecognizedRows) > 0) {
+        $unrecognizedHtml = '<h3>Нераспознанные строки:</h3>';
+        $unrecognizedHtml .= '<table class="table">';
+        foreach ($unrecognizedRows as $i => $unrecognizedRow) {
+            $unrecognizedHtml .= '<tr>';
+            $unrecognizedHtml .= '<td>' . ($i + 1) . '. ' . $unrecognizedRow . '</td>';
+            $unrecognizedHtml .= '</tr>';
+        }
+        $unrecognizedHtml .= '</table>';
+    }
+
+
     $log = 'log-' . date('d-m-Y_H-m-s', time()) . '.txt';
     writeLog($log, 'Number of imported rows: ' . $productCount);
     writeLog($log, 'Written to PDF: ' . $productCount);
@@ -339,8 +380,14 @@ try {
     $mpdf->SetHTMLHeader($header);
     $mpdf->WriteHTML($htmlByName, 2);
 
+    if ($unrecognizedHtml) {
+        $mpdf->SetHTMLHeader('');
+        $mpdf->AddPage();
+        $mpdf->WriteHTML($unrecognizedHtml, 2);
+    }
+
     $filename = $_FILES['csv']['name'] . '.pdf';
-    $mpdf->Output($filename, 'D');
+    $mpdf->Output($filename, 'I');
 } catch (Exception $e) {
     session_start();
     $_SESSION['error'] = '<strong>Error!</strong> ' . $e->getMessage();
