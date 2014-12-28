@@ -168,15 +168,17 @@ try {
     $i = 0;
     $passedRowCount = 0;
     $unrecognizedRows = array();
+    $n = 0;
     while ($row = fgetcsv($file)) {
         $name = null;
         $size = null;
         $type = null;
         $color = null;
+        $n++;
 
         if ($row[0] == 'product_title') {
             $passedRowCount++;
-            $unrecognizedRows[] = implode(', ', $row);
+            $unrecognizedRows[] = implode(', ', array_merge(array($n), $row));
             continue;
         }
 
@@ -227,7 +229,7 @@ try {
 
         if (!$name or !$type or !$color or !$size) {
             $passedRowCount++;
-            $unrecognizedRows[] = implode(', ', $row);
+            $unrecognizedRows[] = implode(', ', array_merge(array($n), $row));
             continue;
         }
 
@@ -348,11 +350,11 @@ try {
 
     $unrecognizedHtml = null;
     if (count($unrecognizedRows) > 0) {
-        $unrecognizedHtml = '<h3>Нераспознанные строки:</h3>';
+        $unrecognizedHtml = '<h3>Unrecognized rows:</h3>';
         $unrecognizedHtml .= '<table class="table">';
-        foreach ($unrecognizedRows as $i => $unrecognizedRow) {
+        foreach ($unrecognizedRows as $unrecognizedRow) {
             $unrecognizedHtml .= '<tr>';
-            $unrecognizedHtml .= '<td>' . ($i + 1) . '. ' . $unrecognizedRow . '</td>';
+            $unrecognizedHtml .= '<td>' . $unrecognizedRow . '</td>';
             $unrecognizedHtml .= '</tr>';
         }
         $unrecognizedHtml .= '</table>';
