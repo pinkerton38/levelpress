@@ -213,7 +213,7 @@ try {
         // попытка найти тип в названии
         if ($type === null) {
             foreach ($availableTypes as $availableType) {
-                if (strpos($data[$i]['name'], $availableType) !== false) {
+                if (stripos($name, $availableType) !== false) {
                     $type = $availableType;
                     break;
                 }
@@ -241,21 +241,26 @@ try {
         $data[$i]['price'] = trim($row[4]);
         $i++;
     }
-    $productCount = count($data);
+    $rowCount = count($data);
 
     $sizes = array();
     $dataByName = array();
     foreach ($data as $row) {
         $sizes[] = $row['size'];
-        $dataByName[$row['name']][$row['type']][$row['color']][$row['size']] = $row['quantity'];
+        if (!isset($dataByName[$row['name']][$row['type']][$row['color']][$row['size']])) {
+            $dataByName[$row['name']][$row['type']][$row['color']][$row['size']] = 0;
+        }
+        $dataByName[$row['name']][$row['type']][$row['color']][$row['size']] += (int)$row['quantity'];
     }
 
+    $productCount = 0;
     $dataByType = array();
     foreach ($data as $row) {
         if (!isset($dataByType[$row['type']][$row['color']][$row['size']])) {
             $dataByType[$row['type']][$row['color']][$row['size']] = 0;
         }
         $dataByType[$row['type']][$row['color']][$row['size']] += (int)$row['quantity'];
+        $productCount += (int)$row['quantity'];
     }
 
     unset($data);
@@ -362,8 +367,8 @@ try {
 
 
     $log = 'log-' . date('d-m-Y_H-m-s', time()) . '.txt';
-    writeLog($log, 'Number of imported rows: ' . $productCount);
-    writeLog($log, 'Written to PDF: ' . $productCount);
+    writeLog($log, 'Number of imported rows: ' . $rowCount);
+    writeLog($log, 'Written to PDF: ' . $rowCount);
     writeLog($log, 'Number of erroneous lines: ' . $passedRowCount);
 
 
