@@ -302,6 +302,7 @@ try {
         $htmlByType .= '</tr>';
 
         $colors = array_keys($row);
+        $totalColumn = 0;
         foreach ($colors as $color) {
             $htmlByType .= '<tr>';
             $htmlByType .= '<td class="product-color">' . $color . '</td>';
@@ -311,9 +312,15 @@ try {
                 $total += (int)$quantity;
                 $htmlByType .= '<td>' . $quantity . '</td>';
             }
+            $totalColumn += $total;
             $htmlByType .= '<td class="bold">' . $total . '</td>';
             $htmlByType .= '</tr>';
         }
+        $htmlByType .= '<tr class="no-border">';
+        $htmlByType .= '<td colspan="' . (count($sizes) + 1) . '"></td>';
+        $htmlByType .= '<td class="bold">' . $totalColumn . '</td>';
+        $htmlByType .= '</tr>';
+
         $htmlByType .= '</table>';
     }
 
@@ -336,6 +343,7 @@ try {
             $htmlByName .= '<td class="product-type" colspan="' . count($sizes) . '">' . $type . '</td>';
             $htmlByName .= '</tr>';
 
+            $totalColumn = 0;
             $colors = array_keys($dataByName[$name][$type]);
             foreach ($colors as $color) {
                 $htmlByName .= '<tr>';
@@ -346,9 +354,14 @@ try {
                     $total += (int)$quantity;
                     $htmlByName .= '<td>' . $quantity . '</td>';
                 }
+                $totalColumn += $total;
                 $htmlByName .= '<td class="bold">' . $total . '</td>';
                 $htmlByName .= '</tr>';
             }
+            $htmlByName .= '<tr class="no-border">';
+            $htmlByName .= '<td colspan="' . (count($sizes) + 1) . '"></td>';
+            $htmlByName .= '<td class="bold">' . $totalColumn . '</td>';
+            $htmlByName .= '</tr>';
         }
     }
     $htmlByName .= '</table>';
@@ -394,7 +407,7 @@ try {
     }
 
     $filename = $_FILES['csv']['name'] . '.pdf';
-    $mpdf->Output($filename, 'D');
+    $mpdf->Output($filename, 'I');
 } catch (Exception $e) {
     session_start();
     $_SESSION['error'] = '<strong>Error!</strong> ' . $e->getMessage();

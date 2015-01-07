@@ -1,7 +1,7 @@
-body{
+body {
     font-size: 12px;
     font-family: Arial, Helvetica, Sans-Serif;
-    color:#313131;
+    color: #313131;
 }
 
 #logo {
@@ -24,6 +24,7 @@ td.product-name {
     font-weight: bold;
     border-bottom: none;
 }
+
 td.product-type {
     padding-left: 10px;
     padding-top: 10px;
@@ -35,6 +36,10 @@ td.product-color {
     padding-left: 20px;
 }
 
-td.bold{
+td.bold {
     font-weight: bold;
+}
+
+.no-border td {
+    border-bottom: none;
 }
