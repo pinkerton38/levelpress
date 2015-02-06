@@ -1,15 +1,14 @@
-[
-    "Blue",
-    "Black",
-    "Red",
-    "Orange",
-    "Pink",
-    "Heather Grey",
-    "Navy",
-    "Navy Blue",
-    "Royal Blue",
-    "Purple",
-    "Grey",
-    "Violet",
-    "Green"
-]
+{
+  "Blue": [],
+  "Black": [],
+  "Red": [],
+  "Orange": [],
+  "Pink": [],
+  "Heather Grey": [],
+  "Navy": ["Navy Blue"],
+  "Royal Blue": [],
+  "Purple": [],
+  "Grey": [],
+  "Violet": [],
+  "Green": []
+}

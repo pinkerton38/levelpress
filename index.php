@@ -28,6 +28,11 @@ unset($_SESSION['error']);
             <div class="well well-lg">
                 <form action="convert.php" method="post" enctype="multipart/form-data" class="form-horizontal">
                     <div class="form-group">
+                        <div class="col-md-5 col-sm-5 col-md-offset-3 col-sm-offset-3">
+                            <input type="text" name="name" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label for="csv" class="col-md-3 col-sm-3 control-label">CSV file</label>
 
                         <div class="col-md-5 col-sm-5 ">

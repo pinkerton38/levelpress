@@ -1,30 +1,30 @@
 {
-    "s": ["small"],
-    "m": ["medium"],
-    "l": ["large"],
-    "xl": [
-        "x-large",
-        "x-l",
-        "x large"
-    ],
-    "2xl": [
-        "2x-large",
-        "2x-l",
-        "2x large"
-    ],
-    "3xl": [
-        "3x-large",
-        "3x-l",
-        "3x large"
-    ],
-    "4xl": [
-        "4x-large",
-        "4x-l",
-        "4x large"
-    ],
-    "5xl": [
-        "5x-large",
-        "5x-l",
-        "5x large"
-    ]
+  "s": ["small"],
+  "m": ["medium"],
+  "l": ["large"],
+  "xl": [
+    "x-large",
+    "x-l",
+    "x large"
+  ],
+  "2xl": [
+    "2x-large",
+    "2x-l",
+    "2x large"
+  ],
+  "3xl": [
+    "3x-large",
+    "3x-l",
+    "3x large"
+  ],
+  "4xl": [
+    "4x-large",
+    "4x-l",
+    "4x large"
+  ],
+  "5xl": [
+    "5x-large",
+    "5x-l",
+    "5x large"
+  ]
 }

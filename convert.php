@@ -1,149 +1,13 @@
 <?php
-function writeLog($filename, $data)
-{
-    $f = fopen($filename, 'a+');
-    if (!$f) {
-        throw new Exception('Error writing to the log file. Check the permissions.');
-    }
+include 'functions.php';
 
-    fwrite($f, $data . PHP_EOL);
-    fclose($f);
-}
+$groups = array(
+    'DIGITAL',
+    'PRESS',
+);
 
 try {
-    if (!isset($_POST['convert'])) {
-        throw new Exception('Access denied.');
-    }
-
-    if (!isset($_FILES['csv']) or !$_FILES['csv']['size']) {
-        throw new Exception('File is empty or absent.');
-    }
-
-    if ($_FILES['csv']['type'] != 'text/csv') {
-        throw new Exception('Invalid file format: only supported format csv.');
-    }
-
-    global $availableSizes;
-    $availableSizes = json_decode(file_get_contents('config/sizes.json'));
-    if ($availableSizes === null) {
-        throw new Exception('Invalid sizes.json file.');
-    }
-    $availableSizes = (array)$availableSizes;
-
-    global $availableColors;
-    $availableColors = json_decode(file_get_contents('config/colors.json'));
-    if ($availableColors === null) {
-        throw new Exception('Invalid colors.json file.');
-    }
-
-    global $availableTypes;
-    $availableTypes = json_decode(file_get_contents('config/types.json'));
-    if ($availableTypes === null) {
-        throw new Exception('Invalid types.json file.');
-    }
-
-    global $skippedWordsInType;
-    $skippedWordsInType = json_decode(file_get_contents('config/skipped_words_in_type.json'));
-    if ($skippedWordsInType === null) {
-        throw new Exception('Invalid skipped_words_in_type.json file.');
-    }
-
-    function tryGetName($value)
-    {
-        if (!strlen(trim($value))) {
-            return null;
-        }
-
-        global $skippedWordsInType;
-
-        foreach ($skippedWordsInType as $skippedWord) {
-            $value = trim(str_ireplace($skippedWord, '', $value));
-        }
-
-        return trim($value);
-    }
-
-    function tryGetSize($value)
-    {
-        global $availableSizes;
-
-        $result = null;
-
-        foreach ($availableSizes as $reference => $applicants) {
-            if ($value == $reference) {
-                $result = $reference;
-                break;
-            }
-            foreach ($applicants as $applicant) {
-                if ($value == $applicant) {
-                    $result = $reference;
-                    break;
-                }
-            }
-            if ($result) {
-                break;
-            }
-        }
-
-        return $result;
-    }
-
-    function tryGetType($value)
-    {
-        global $availableTypes;
-        global $skippedWordsInType;
-
-        foreach ($availableTypes as $availableType) {
-            $availableType = trim($availableType);
-            if (strtolower($availableType) == strtolower($value)) {
-                foreach ($skippedWordsInType as $skippedWord) {
-                    $availableType = trim(str_ireplace($skippedWord, '', $availableType));
-                }
-                return $availableType;
-            }
-        }
-
-        return null;
-    }
-
-    function tryGetColor($value)
-    {
-        global $availableColors;
-
-        foreach ($availableColors as $availableColor) {
-            $availableColor = trim($availableColor);
-            if (strtolower($availableColor) == strtolower($value)) {
-                return $value;
-            }
-        }
-
-        return $value;
-    }
-
-    function cmpSizes($a, $b)
-    {
-        global $availableSizes;
-
-        if ($a == $b) {
-            return 0;
-        }
-
-        foreach (array_keys($availableSizes) as $pos => $reference) {
-            if ($a == $reference) {
-                $a = $pos;
-                break;
-            }
-        }
-
-        foreach (array_keys($availableSizes) as $pos => $reference) {
-            if ($b == $reference) {
-                $b = $pos;
-                break;
-            }
-        }
-
-        return ($a < $b) ? -1 : 1;
-    }
+    include 'load.php';
 
     $file = fopen($_FILES['csv']['tmp_name'], 'r+');
     if (!$file) {
@@ -281,6 +145,7 @@ try {
     $headHtml = '<div id="logo">
                 <img src="img/logo.jpg">
             </div>
+            <div>' . (isset($_POST['name']) ? htmlspecialchars($_POST['name']) : '') . '</div>
             <div id="date">Report: ' . date('m/d/Y H:i', time()) . '</div>
             <div id="summary">Number of products: ' . $productCount . '</div>
             <div id="summary">Number of erroneous lines: ' . $passedRowCount . '</div>';
@@ -308,7 +173,7 @@ try {
             $htmlByType .= '<td class="product-color">' . $color . '</td>';
             $total = 0;
             foreach ($sizes as $size) {
-                $quantity = isset($dataByType[$type][$color][$size]) ? $dataByType[$type][$color][$size] : '0';
+                $quantity = isset($dataByType[$type][$color][$size]) ? $dataByType[$type][$color][$size] : 0;
                 $total += (int)$quantity;
                 $htmlByType .= '<td>' . $quantity . '</td>';
             }
