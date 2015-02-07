@@ -232,7 +232,7 @@ class Converter
             }
 
             foreach ($this->_groups as $group => $limit) {
-                if ($totalName >= $limit) {
+                if ($totalName > $limit) {
                     $htmlByGroup[$group] .= $htmlByName;
                     $this->_totalByGroups[$group] += $totalName;
                     break;
