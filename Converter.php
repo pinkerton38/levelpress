@@ -3,28 +3,59 @@
 class Converter
 {
     private $_file = null;
+    private $_log = null;
     private $_data = array();
-    private $_unrecognizedRows = array();
-    private $_validRowCount = 0;
-    private $_rowCount = 0;
-    private $_productCount = 0;
 
     private $_availableSizes;
     private $_availableColors;
     private $_availableTypes;
     private $_skippedWordsInType;
 
+    // @fixme подмать, как их убрать из переменных объекта
+    private $_unrecognizedRows = array();
+    private $_validRowCount = 0;
+    private $_rowCount = 0;
+    private $_productCount = 0;
     private $_sizes = array();
+    private $_totalByGroups = array();
 
-    private $_log;
+    private $_groups = array(
+        'PRESS' => 5, # >=5
+        'DIGITAL' => 0, #,>= 0
+    );
 
-//    private $groups = array(
-//        'DIGITAL' => 0, #,>= 0
-//        'PRESS' => 5, # >=5
-//    );
-
+    /**
+     * @param $file array
+     * @throws Exception
+     */
     public function __construct($file)
     {
+        $this->_log = 'log-' . date('d-m-Y_H-m-s', time()) . '.txt';
+
+        $this->_availableSizes = json_decode(file_get_contents('config/sizes.json'));
+        if ($this->_availableSizes === null) {
+            throw new Exception('Invalid sizes.json file.');
+        }
+        $this->_availableSizes = (array)$this->_availableSizes;
+
+        $this->_availableColors = json_decode(file_get_contents('config/colors.json'));
+        if ($this->_availableColors === null) {
+            throw new Exception('Invalid colors.json file.');
+        }
+        $this->_availableColors = (array)$this->_availableColors;
+
+        $this->_availableTypes = json_decode(file_get_contents('config/types.json'));
+        if ($this->_availableTypes === null) {
+            throw new Exception('Invalid types.json file.');
+        }
+        $this->_availableTypes = (array)$this->_availableTypes;
+
+        $this->_skippedWordsInType = json_decode(file_get_contents('config/skipped_words_in_type.json'));
+        if ($this->_skippedWordsInType === null) {
+            throw new Exception('Invalid skipped_words_in_type.json file.');
+        }
+        $this->_skippedWordsInType = (array)$this->_skippedWordsInType;
+
         if ($file['type'] != 'text/csv') {
             throw new Exception('Invalid file format: only supported format csv.');
         }
@@ -50,30 +81,6 @@ class Converter
 
         $this->_file = $file;
 
-        $this->_availableSizes = json_decode(file_get_contents('config/sizes.json'));
-        if ($this->_availableSizes === null) {
-            throw new Exception('Invalid sizes.json file.');
-        }
-        $this->_availableSizes = (array)$this->_availableSizes;
-
-
-        $this->_availableColors = json_decode(file_get_contents('config/colors.json'));
-        if ($this->_availableColors === null) {
-            throw new Exception('Invalid colors.json file.');
-        }
-
-        $this->_availableTypes = json_decode(file_get_contents('config/types.json'));
-        if ($this->_availableTypes === null) {
-            throw new Exception('Invalid types.json file.');
-        }
-
-        $this->_skippedWordsInType = json_decode(file_get_contents('config/skipped_words_in_type.json'));
-        if ($this->_skippedWordsInType === null) {
-            throw new Exception('Invalid skipped_words_in_type.json file.');
-        }
-
-        $this->_log = 'log-' . date('d-m-Y_H-m-s', time()) . '.txt';
-
         $this->_data = $this->_parse();
     }
 
@@ -86,13 +93,19 @@ class Converter
         $css = file_get_contents('css/pdf.css');
         $mpdf->WriteHTML($css, 1);
 
+        // @fixme нужно вызывать раньше чем _headHtml !!!
+        $htmlByName = $this->_htmlByName();
+
         $mpdf->AddPage();
         $mpdf->WriteHTML($this->_headHtml(), 2);
         $mpdf->WriteHTML($this->_htmlByType(), 2);
 
-        $mpdf->AddPage();
-        $mpdf->SetHTMLHeader($this->header());
-        $mpdf->WriteHTML($this->_htmlByName(), 2);
+        foreach ($htmlByName as $data) {
+            $mpdf->AddPage();
+            $mpdf->SetHTMLHeader($this->_headerHtml());
+            $mpdf->WriteHTML($data, 2);
+            $mpdf->SetHTMLHeader('');
+        }
 
         if (count($this->_unrecognizedRows)) {
             $mpdf->SetHTMLHeader('');
@@ -130,7 +143,7 @@ class Converter
         return $dataByType;
     }
 
-    private function header()
+    private function _headerHtml()
     {
         $header = '<br><table class="table">';
         $header .= '<tr>';
@@ -152,6 +165,13 @@ class Converter
         $headHtml .= '<div id="date">Report: ' . date('m/d/Y H:i', time()) . '</div>';
         $headHtml .= '<div id="summary">Number of products: ' . $this->_productCount . '</div>';
         $headHtml .= '<div id="summary">Number of erroneous lines: ' . count($this->_unrecognizedRows) . '</div>';
+
+        foreach ($this->_groups as $group => $limit) {
+            if (!isset($this->_totalByGroups[$group]))
+                continue;
+
+            $headHtml .= '<div id="summary">' . $group . ': ' . $this->_totalByGroups[$group] . '</div>';
+        }
 
         return $headHtml;
     }
@@ -175,21 +195,14 @@ class Converter
 
     private function _htmlByName()
     {
-        $htmlByName = '<br><table class="table">';
-        $htmlByName .= '<tr>';
-        $htmlByName .= '<td class="bold" style="width: 30%;">Product</td>';
-        foreach ($this->_sizes as $size) {
-            $htmlByName .= '<td class="bold">' . strtoupper($size) . '</td>';
-        }
-        $htmlByName .= '<td class="bold">total</td>';
-        $htmlByName .= '</tr>';
+        $htmlByGroup = array();
 
         $dataByName = $this->_dataByName();
-
         foreach ($dataByName as $name => $row) {
-            $htmlByName .= '<tr>';
+            $htmlByName = '<tr>';
             $htmlByName .= '<td class="product-name" colspan="' . count($this->_sizes) . '">' . $name . '</td>';
             $htmlByName .= '</tr>';
+            $totalName = 0;
             $types = array_keys($row);
             foreach ($types as $type) {
                 $htmlByName .= '<tr>';
@@ -211,15 +224,49 @@ class Converter
                     $htmlByName .= '<td class="bold">' . $total . '</td>';
                     $htmlByName .= '</tr>';
                 }
+                $totalName += $totalColumn;
                 $htmlByName .= '<tr class="no-border">';
                 $htmlByName .= '<td colspan="' . (count($this->_sizes) + 1) . '"></td>';
                 $htmlByName .= '<td class="bold">' . $totalColumn . '</td>';
                 $htmlByName .= '</tr>';
             }
-        }
-        $htmlByName .= '</table>';
 
-        return $htmlByName;
+            foreach ($this->_groups as $group => $limit) {
+                if ($totalName >= $limit) {
+                    $htmlByGroup[$group] .= $htmlByName;
+                    $this->_totalByGroups[$group] += $totalName;
+                    break;
+                }
+            }
+        }
+
+        $html = array();
+        foreach ($this->_groups as $group => $limit) {
+            if (!isset($htmlByGroup[$group]))
+                continue;
+
+            $html[$group] .= '<br><table class="table">';
+
+            $html[$group] .= '<tr>';
+            $html[$group] .= '<td class="product-name" style="text-align: center;" colspan="' . count($this->_sizes) . '">==' . $group . '==</td>';
+            $html[$group] .= '</tr>';
+
+            $html[$group] .= '<tr>';
+            $html[$group] .= '<td class="bold" style="width: 30%;">Product</td>';
+            foreach ($this->_sizes as $size) {
+                $html[$group] .= '<td class="bold">' . strtoupper($size) . '</td>';
+            }
+            $html[$group] .= '<td class="bold">total</td>';
+            $html[$group] .= '</tr>';
+
+            $html[$group] .= $htmlByGroup[$group];
+
+            $html[$group] .= '</table>';
+        }
+
+        asort($html);
+
+        return $html;
     }
 
     private function _htmlByType()
@@ -353,7 +400,6 @@ class Converter
 
         $this->_sizes = array_unique($this->_sizes);
         usort($this->_sizes, array('Converter', '_cmpSizes'));
-
 
         $this->_log('Number of imported rows: ' . $this->_validRowCount);
         $this->_log('Written to PDF: ' . $this->_validRowCount);
