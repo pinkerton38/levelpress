@@ -18,6 +18,7 @@ class Converter
     private $_productCount = 0;
     private $_sizes = array();
     private $_totalByGroups = array();
+    private $_comment = null;
 
     private $_groups = array(
         'PRESS' => 5, # >=5
@@ -31,6 +32,8 @@ class Converter
     public function __construct($file)
     {
         $this->_log = 'log-' . date('d-m-Y_H-m-s', time()) . '.txt';
+
+        $this->_comment = isset($_POST['name']) ? htmlspecialchars($_POST['name']) : null;
 
         $this->_availableSizes = json_decode(file_get_contents('config/sizes.json'));
         if ($this->_availableSizes === null) {
@@ -100,10 +103,11 @@ class Converter
         $mpdf->WriteHTML($this->_headHtml(), 2);
         $mpdf->WriteHTML($this->_htmlByType(), 2);
 
-        foreach ($htmlByName as $data) {
+        foreach ($htmlByName as $group => $data) {
             $mpdf->AddPage();
             $mpdf->SetHTMLHeader($this->_headerHtml());
             $mpdf->WriteHTML($data, 2);
+            $mpdf->WriteHTML($this->_groupSummary($group), 2);
             $mpdf->SetHTMLHeader('');
         }
 
@@ -161,11 +165,12 @@ class Converter
     private function _headHtml()
     {
         $headHtml = '<div id="logo"><img src="img/logo.jpg"></div>';
-        $headHtml .= '<div>' . (isset($_POST['name']) ? htmlspecialchars($_POST['name']) : '') . '</div>';
+        $headHtml .= '<div>' . $this->_comment . '</div>';
         $headHtml .= '<div id="date">Report: ' . date('m/d/Y H:i', time()) . '</div>';
         $headHtml .= '<div id="summary">Number of products: ' . $this->_productCount . '</div>';
         $headHtml .= '<div id="summary">Number of erroneous lines: ' . count($this->_unrecognizedRows) . '</div>';
 
+        asort($this->_groups);
         foreach ($this->_groups as $group => $limit) {
             if (!isset($this->_totalByGroups[$group]))
                 continue;
@@ -174,6 +179,20 @@ class Converter
         }
 
         return $headHtml;
+    }
+
+    private function _groupSummary($group)
+    {
+        if (!isset($this->_totalByGroups[$group]))
+            return null;
+
+        $summary = '<div style="padding: 8px 12px; background-color: #f5f5f5;">';
+        $summary .= '<div>' . $this->_comment . '</div>';
+        $summary .= '<div id="date">Report: ' . date('m/d/Y H:i', time()) . '</div>';
+        $summary .= '<div id="summary">' . $group . ': ' . $this->_totalByGroups[$group] . '</div>';
+        $summary .= '</div>';
+
+        return $summary;
     }
 
     private function _unrecognizedRowsHtml()
