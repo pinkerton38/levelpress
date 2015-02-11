@@ -117,7 +117,6 @@ class Converter
             $inline = '<table class="table"><tr>';
             $inline .= '<td class="product-name" style="text-align: center;" colspan="' . count($this->_sizes) . '">';
             $inline .= '<div>==' . $group . '==</div>';
-            $inline .= '<div>' . $this->_comment . '<br>&nbsp;</div>';
             $inline .= '</td>';
             $inline .= '</tr></table>';
 
@@ -290,7 +289,7 @@ class Converter
         $dataByName = $this->_dataByName();
         foreach ($dataByName as $name => $row) {
             $htmlByName = '<tr>';
-            $htmlByName .= '<td class="product-name" colspan="' . count($this->_sizes) . '">' . $name . '</td>';
+            $htmlByName .= '<td class="product-name" colspan="' . count($this->_sizes) . '">' . $name . '<span class="inline-comment">&nbsp;' . $this->_comment . '</td>';
             $htmlByName .= '</tr>';
             $totalName = 0;
             $types = array_keys($row);
@@ -348,7 +347,6 @@ class Converter
             $html[$group] .= '<tr>';
             $html[$group] .= '<td class="product-name" style="text-align: center;" colspan="' . count($this->_sizes) . '">';
             $html[$group] .= '<div>==' . $group . '==</div>';
-            $html[$group] .= '<div>' . $this->_comment . '<br>&nbsp;</div>';
             $html[$group] .= '</td>';
             $html[$group] .= '</tr>';
 
@@ -369,7 +367,7 @@ class Converter
             $htmlByType .= '<br><table class="table">';
 
             $htmlByType .= '<tr>';
-            $htmlByType .= '<td class="product-name" colspan="' . count($this->_sizes) . '">' . $type . '</td>';
+            $htmlByType .= '<td class="product-name" colspan="' . count($this->_sizes) . '">' . $type . '<span class="inline-comment">&nbsp;' . $this->_comment . '</span></td>';
             $htmlByType .= '</tr>';
 
             $htmlByType .= '<tr>';
