@@ -103,12 +103,28 @@ class Converter
         $css = file_get_contents('css/pdf.css');
         $mpdf->WriteHTML($css, 1);
 
+
         // @fixme нужно вызывать раньше чем _headHtml !!!
         $htmlByName = $this->_htmlByName();
 
         $mpdf->AddPage();
         $mpdf->WriteHTML($this->_headHtml(), 2);
-        $mpdf->WriteHTML($this->_htmlByType(), 2);
+        $mpdf->WriteHTML($this->_htmlByType($this->_dataByType()), 2);
+
+
+        foreach ($this->_dataByTypeAndGroup() as $group => $dataByType) {
+            $mpdf->AddPage();
+            $inline = '<table class="table"><tr>';
+            $inline .= '<td class="product-name" style="text-align: center;" colspan="' . count($this->_sizes) . '">';
+            $inline .= '<div>==' . $group . '==</div>';
+            $inline .= '<div>' . $this->_comment . '<br>&nbsp;</div>';
+            $inline .= '</td>';
+            $inline .= '</tr></table>';
+
+            $mpdf->WriteHTML($inline);
+
+            $mpdf->WriteHTML($this->_htmlByType($dataByType), 2);
+        }
 
         foreach ($htmlByName as $group => $data) {
             $mpdf->AddPage();
@@ -125,7 +141,7 @@ class Converter
         }
 
         $filename = $_FILES['csv']['name'] . '.pdf';
-        $mpdf->Output($filename, 'D');
+        $mpdf->Output($filename, 'I');
     }
 
     private function _dataByName()
@@ -152,6 +168,48 @@ class Converter
         }
 
         return $dataByType;
+    }
+
+    private function _dataByTypeAndGroup()
+    {
+        $quantityByTypesAndNames = array();
+
+        foreach ($this->_data as $row) {
+            if (!isset($quantityByTypesAndNames[$row['type']][$row['name']])) {
+                $quantityByTypesAndNames[$row['type']][$row['name']] = 0;
+            }
+            $quantityByTypesAndNames[$row['type']][$row['name']] += (int)$row['quantity'];
+        }
+
+        arsort($this->_groups);
+        $byGroups = array();
+        foreach ($quantityByTypesAndNames as $type => $quantityByNames) {
+            foreach ($quantityByNames as $name => $quantity) {
+                foreach ($this->_groups as $group => $limit) {
+                    if ($quantity > $limit) {
+                        $byGroups[$group][$type][] = $name;
+                        break;
+                    }
+                }
+            }
+        }
+
+        $dataByTypeAndGroup = array();
+        foreach ($byGroups as $group => $nameByTypes) {
+            foreach ($nameByTypes as $type => $names) {
+                foreach ($this->_data as $row) {
+                    if (in_array($row['name'], $names)) {
+                        if (!isset($dataByTypeAndGroup[$group][$row['type']][$row['color']][$row['size']])) {
+                            $dataByTypeAndGroup[$group][$row['type']][$row['color']][$row['size']] = 0;
+                        }
+                        $dataByTypeAndGroup[$group][$row['type']][$row['color']][$row['size']] += (int)$row['quantity'];
+                    }
+                }
+            }
+        }
+
+        asort($dataByTypeAndGroup);
+        return $dataByTypeAndGroup;
     }
 
     private function _headerHtml()
@@ -230,9 +288,17 @@ class Converter
             $htmlByName .= '</tr>';
             $totalName = 0;
             $types = array_keys($row);
-            foreach ($types as $type) {
+            foreach ($types as $typeNumber => $type) {
                 $htmlByName .= '<tr>';
-                $htmlByName .= '<td class="product-type" colspan="' . count($this->_sizes) . '">' . $type . '</td>';
+                $htmlByName .= '<td class="bold" style="width: 30%;">' . $type . '</td>';
+                if ($typeNumber == 0) {
+                    foreach ($this->_sizes as $size) {
+                        $htmlByName .= '<td class="bold">' . strtoupper($size) . '</td>';
+                    }
+                    $htmlByName .= '<td class="bold">total</td>';
+                } else {
+                    $htmlByName .= '<td colspan="' . (count($this->_sizes) + 1) . '"></td>';
+                }
                 $htmlByName .= '</tr>';
 
                 $totalColumn = 0;
@@ -280,14 +346,6 @@ class Converter
             $html[$group] .= '</td>';
             $html[$group] .= '</tr>';
 
-            $html[$group] .= '<tr>';
-            $html[$group] .= '<td class="bold" style="width: 30%;">Product</td>';
-            foreach ($this->_sizes as $size) {
-                $html[$group] .= '<td class="bold">' . strtoupper($size) . '</td>';
-            }
-            $html[$group] .= '<td class="bold">total</td>';
-            $html[$group] .= '</tr>';
-
             $html[$group] .= $htmlByGroup[$group];
 
             $html[$group] .= '</table>';
@@ -298,10 +356,8 @@ class Converter
         return $html;
     }
 
-    private function _htmlByType()
+    private function _htmlByType($dataByType)
     {
-        $dataByType = $this->_dataByType();
-
         $htmlByType = '';
         foreach ($dataByType as $type => $row) {
             $htmlByType .= '<br><table class="table">';
