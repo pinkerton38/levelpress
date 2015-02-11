@@ -182,12 +182,12 @@ class Converter
         }
 
         arsort($this->_groups);
-        $byGroups = array();
+        $namesByGroupsAndTypes = array();
         foreach ($quantityByTypesAndNames as $type => $quantityByNames) {
             foreach ($quantityByNames as $name => $quantity) {
                 foreach ($this->_groups as $group => $limit) {
                     if ($quantity > $limit) {
-                        $byGroups[$group][$type][] = $name;
+                        $namesByGroupsAndTypes[$group][$type][] = $name;
                         break;
                     }
                 }
@@ -195,15 +195,21 @@ class Converter
         }
 
         $dataByTypeAndGroup = array();
-        foreach ($byGroups as $group => $nameByTypes) {
-            foreach ($nameByTypes as $type => $names) {
-                foreach ($this->_data as $row) {
+        foreach ($this->_data as $row) {
+            foreach ($namesByGroupsAndTypes as $group => $nameByTypes) {
+                $find = false;
+                foreach ($nameByTypes as $type => $names) {
                     if (in_array($row['name'], $names)) {
                         if (!isset($dataByTypeAndGroup[$group][$row['type']][$row['color']][$row['size']])) {
                             $dataByTypeAndGroup[$group][$row['type']][$row['color']][$row['size']] = 0;
                         }
                         $dataByTypeAndGroup[$group][$row['type']][$row['color']][$row['size']] += (int)$row['quantity'];
+                        $find = true;
+                        break;
                     }
+                }
+                if ($find) {
+                    break;
                 }
             }
         }
