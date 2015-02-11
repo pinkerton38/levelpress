@@ -140,7 +140,7 @@ class Converter
         }
 
         $filename = $_FILES['csv']['name'] . '.pdf';
-        $mpdf->Output($filename, 'I');
+        $mpdf->Output($filename, 'D');
     }
 
     private function _dataByName()
