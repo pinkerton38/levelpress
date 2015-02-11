@@ -10,6 +10,7 @@ class Converter
     private $_availableColors;
     private $_availableTypes;
     private $_skippedWordsInType;
+    private $_skippedWordsInName;
 
     // @fixme подмать, как их убрать из переменных объекта
     private $_unrecognizedRows = array();
@@ -58,6 +59,12 @@ class Converter
             throw new Exception('Invalid skipped_words_in_type.json file.');
         }
         $this->_skippedWordsInType = (array)$this->_skippedWordsInType;
+
+        $this->_skippedWordsInName = json_decode(file_get_contents('config/skipped_words_in_name.json'));
+        if ($this->_skippedWordsInName === null) {
+            throw new Exception('Invalid skipped_words_in_name.json file.');
+        }
+        $this->_skippedWordsInName = (array)$this->_skippedWordsInName;
 
         if ($file['type'] != 'text/csv') {
             throw new Exception('Invalid file format: only supported format csv.');
@@ -165,7 +172,7 @@ class Converter
     private function _headHtml()
     {
         $headHtml = '<div id="logo"><img src="img/logo.jpg"></div>';
-        $headHtml .= '<div>' . $this->_comment . '</div>';
+        $headHtml .= '<div class="comment">' . $this->_comment . '</div>';
         $headHtml .= '<div id="date">Report: ' . date('m/d/Y H:i', time()) . '</div>';
         $headHtml .= '<div id="summary">Number of products: ' . $this->_productCount . '</div>';
         $headHtml .= '<div id="summary">Number of erroneous lines: ' . count($this->_unrecognizedRows) . '</div>';
@@ -186,7 +193,7 @@ class Converter
         if (!isset($this->_totalByGroups[$group]))
             return null;
 
-        $summary = '<div style="padding: 8px 12px; background-color: #f5f5f5;">';
+        $summary = '<div class="group-summary">';
         $summary .= '<div>' . $this->_comment . '</div>';
         $summary .= '<div id="date">Report: ' . date('m/d/Y H:i', time()) . '</div>';
         $summary .= '<div id="summary">' . $group . ': ' . $this->_totalByGroups[$group] . '</div>';
@@ -267,7 +274,10 @@ class Converter
             $html[$group] .= '<br><table class="table">';
 
             $html[$group] .= '<tr>';
-            $html[$group] .= '<td class="product-name" style="text-align: center;" colspan="' . count($this->_sizes) . '">==' . $group . '==</td>';
+            $html[$group] .= '<td class="product-name" style="text-align: center;" colspan="' . count($this->_sizes) . '">';
+            $html[$group] .= '<div>==' . $group . '==</div>';
+            $html[$group] .= '<div>' . $this->_comment . '<br>&nbsp;</div>';
+            $html[$group] .= '</td>';
             $html[$group] .= '</tr>';
 
             $html[$group] .= '<tr>';
@@ -382,21 +392,16 @@ class Converter
                 }
             }
 
-            // попытка найти тип в названии
             if ($type === null) {
-                foreach ($this->_availableTypes as $availableType) {
-                    if (stripos($name, $availableType) !== false) {
-                        $type = $availableType;
-                        break;
-                    }
-                }
-                if (!$type) {
+                $type = $this->_tryGetTypeInName($name);
+
+                if ($type === null) {
                     $type = 'T-Shirt';
                 }
             }
 
             if ($color === null) {
-                $color = 'black';
+                $color = 'Black';
             }
 
             if (!$name or !$type or !$color or !$size) {
@@ -429,15 +434,17 @@ class Converter
 
     private function _tryGetName($value)
     {
-        if (!strlen(trim($value))) {
+        $value = trim($value);
+
+        if (!strlen($value)) {
             return null;
         }
 
-        foreach ($this->_skippedWordsInType as $skippedWord) {
+        foreach ($this->_skippedWordsInName as $skippedWord) {
             $value = trim(str_ireplace($skippedWord, '', $value));
         }
 
-        return trim($value);
+        return $value;
     }
 
     private function _tryGetSize($value)
@@ -465,17 +472,44 @@ class Converter
 
     private function _tryGetType($value)
     {
-        foreach ($this->_availableTypes as $availableType) {
-            $availableType = trim($availableType);
-            if (strtolower($availableType) == strtolower($value)) {
-                foreach ($this->_skippedWordsInType as $skippedWord) {
-                    $availableType = trim(str_ireplace($skippedWord, '', $availableType));
+        $value = strtolower(trim($value));
+
+        foreach ($this->_skippedWordsInType as $skippedWord) {
+            $value = trim(str_ireplace($skippedWord, '', $value));
+        }
+
+        $result = null;
+        foreach ($this->_availableTypes as $reference => $applicants) {
+            if ($value == strtolower(trim($reference))) {
+                $result = $reference;
+                break;
+            }
+            foreach ($applicants as $applicant) {
+                if ($value == strtolower(trim($applicant))) {
+                    $result = $reference;
+                    break;
                 }
-                return $availableType;
+            }
+            if ($result) {
+                break;
             }
         }
 
-        return null;
+        return $result;
+    }
+
+    private function _tryGetTypeInName($name)
+    {
+        $type = null;
+
+        foreach ($this->_availableTypes as $availableType) {
+            if (stripos($name, $availableType) !== false) {
+                $type = $availableType;
+                break;
+            }
+        }
+
+        return $type;
     }
 
     private function _tryGetColor($value)

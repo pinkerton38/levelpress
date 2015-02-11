@@ -1,10 +1,16 @@
-[
-  "Adult Hoodie",
-  "Adult T-Shirt",
-  "Youth Hoodie",
-  "Youth T-Shirt",
-  "T-Shirt",
-  "Hoodie",
-  "Women Racerback",
-  "Racerback"
-]
+{
+  "Youth T-Shirt": [],
+  "T-Shirt": [
+    "Adult T-Shirt"
+  ],
+  "Youth Hoodie": [],
+  "Hoodie": [
+    "Adult Hoodie"
+  ],
+  "Racerback": [
+    "Women Racerback"
+  ],
+  "Women Tee": [
+    "Women's Tee"
+  ]
+}

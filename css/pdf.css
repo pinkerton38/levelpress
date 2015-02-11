@@ -43,3 +43,12 @@ td.bold {
 .no-border td {
     border-bottom: none;
 }
+
+.comment{
+    font-size: 24px;
+}
+
+.group-summary{
+    padding: 8px 12px;
+    background-color: #e5e5e5;
+}
