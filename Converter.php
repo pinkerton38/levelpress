@@ -132,6 +132,7 @@ class Converter
             $mpdf->WriteHTML($this->_groupSummary($group), 2);
             $mpdf->SetHTMLHeader('');
         }
+        unset($htmlByName);
 
         if (count($this->_unrecognizedRows)) {
             $mpdf->SetHTMLHeader('');
@@ -192,13 +193,14 @@ class Converter
                 }
             }
         }
+        unset($quantityByTypesAndNames);
 
         $dataByTypeAndGroup = array();
         foreach ($this->_data as $row) {
+            $find = false;
             foreach ($namesByGroupsAndTypes as $group => $nameByTypes) {
-                $find = false;
                 foreach ($nameByTypes as $type => $names) {
-                    if (in_array($row['name'], $names)) {
+                    if ($row['type'] == $type && in_array($row['name'], $names)) {
                         if (!isset($dataByTypeAndGroup[$group][$row['type']][$row['color']][$row['size']])) {
                             $dataByTypeAndGroup[$group][$row['type']][$row['color']][$row['size']] = 0;
                         }
@@ -563,6 +565,7 @@ class Converter
         $type = null;
 
         foreach ($this->_availableTypes as $availableType) {
+            $availableType = (string)$availableType;
             if (stripos($name, $availableType) !== false) {
                 $type = $availableType;
                 break;

@@ -44,16 +44,17 @@ td.bold {
     border-bottom: none;
 }
 
-.comment{
+.comment {
     font-size: 24px;
 }
-.inline-comment{
+
+.inline-comment {
     padding-left: 20px;
     font-size: 12px;
     font-weight: normal;
 }
 
-.group-summary{
+.group-summary {
     padding: 8px 12px;
     background-color: #e5e5e5;
 }
