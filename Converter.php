@@ -111,8 +111,13 @@ class Converter
         $mpdf->WriteHTML($this->_headHtml(), 2);
         $mpdf->WriteHTML($this->_htmlByType($this->_dataByType()), 2);
 
+        $dataByTypeAndGroup = $this->_dataByTypeAndGroup();
 
-        foreach ($this->_dataByTypeAndGroup() as $group => $dataByType) {
+        asort($this->_groups);
+        foreach ($this->_groups as $group => $limit) {
+            if (!isset($dataByTypeAndGroup[$group]))
+                continue;
+
             $mpdf->AddPage();
             $inline = '<table class="table"><tr>';
             $inline .= '<td class="product-name" style="text-align: center;" colspan="' . count($this->_sizes) . '">';
@@ -122,13 +127,17 @@ class Converter
 
             $mpdf->WriteHTML($inline);
 
-            $mpdf->WriteHTML($this->_htmlByType($dataByType), 2);
+            $mpdf->WriteHTML($this->_htmlByType($dataByTypeAndGroup[$group]), 2);
         }
 
-        foreach ($htmlByName as $group => $data) {
+        asort($this->_groups);
+        foreach ($this->_groups as $group => $limit) {
+            if (!isset($htmlByName[$group]))
+                continue;
+
             $mpdf->AddPage();
             $mpdf->SetHTMLHeader($this->_headerHtml());
-            $mpdf->WriteHTML($data, 2);
+            $mpdf->WriteHTML($htmlByName[$group], 2);
             $mpdf->WriteHTML($this->_groupSummary($group), 2);
             $mpdf->SetHTMLHeader('');
         }
@@ -172,51 +181,41 @@ class Converter
 
     private function _dataByTypeAndGroup()
     {
-        $quantityByTypesAndNames = array();
+        $quantityByNames = array();
 
         foreach ($this->_data as $row) {
-            if (!isset($quantityByTypesAndNames[$row['type']][$row['name']])) {
-                $quantityByTypesAndNames[$row['type']][$row['name']] = 0;
+            if (!isset($quantityByNames[$row['name']])) {
+                $quantityByNames[$row['name']] = 0;
             }
-            $quantityByTypesAndNames[$row['type']][$row['name']] += (int)$row['quantity'];
+            $quantityByNames[$row['name']] += (int)$row['quantity'];
         }
 
         arsort($this->_groups);
-        $namesByGroupsAndTypes = array();
-        foreach ($quantityByTypesAndNames as $type => $quantityByNames) {
-            foreach ($quantityByNames as $name => $quantity) {
-                foreach ($this->_groups as $group => $limit) {
-                    if ($quantity > $limit) {
-                        $namesByGroupsAndTypes[$group][$type][] = $name;
-                        break;
-                    }
+        $namesByGroups = array();
+        foreach ($quantityByNames as $name => $quantity) {
+            foreach ($this->_groups as $group => $limit) {
+                if ($quantity > $limit) {
+                    $namesByGroups[$group][] = $name;
+                    break;
                 }
             }
         }
         unset($quantityByTypesAndNames);
 
-        $dataByTypeAndGroup = array();
+        $dataByGroup = array();
         foreach ($this->_data as $row) {
-            $find = false;
-            foreach ($namesByGroupsAndTypes as $group => $nameByTypes) {
-                foreach ($nameByTypes as $type => $names) {
-                    if ($row['type'] == $type && in_array($row['name'], $names)) {
-                        if (!isset($dataByTypeAndGroup[$group][$row['type']][$row['color']][$row['size']])) {
-                            $dataByTypeAndGroup[$group][$row['type']][$row['color']][$row['size']] = 0;
-                        }
-                        $dataByTypeAndGroup[$group][$row['type']][$row['color']][$row['size']] += (int)$row['quantity'];
-                        $find = true;
-                        break;
+            foreach ($namesByGroups as $group => $names) {
+                if (in_array($row['name'], $names)) {
+                    if (!isset($dataByGroup[$group][$row['type']][$row['color']][$row['size']])) {
+                        $dataByGroup[$group][$row['type']][$row['color']][$row['size']] = 0;
                     }
-                }
-                if ($find) {
+                    $dataByGroup[$group][$row['type']][$row['color']][$row['size']] += (int)$row['quantity'];
                     break;
                 }
             }
         }
 
-        asort($dataByTypeAndGroup);
-        return $dataByTypeAndGroup;
+        return $dataByGroup;
     }
 
     private function _headerHtml()
@@ -330,6 +329,7 @@ class Converter
                 $htmlByName .= '</tr>';
             }
 
+            arsort($this->_groups);
             foreach ($this->_groups as $group => $limit) {
                 if ($totalName > $limit) {
                     $htmlByGroup[$group] .= $htmlByName;
@@ -356,8 +356,6 @@ class Converter
 
             $html[$group] .= '</table>';
         }
-
-        asort($html);
 
         return $html;
     }
