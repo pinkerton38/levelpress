@@ -461,6 +461,12 @@ class Converter
             }
 
             if ($color === null) {
+                // если в колонке №2 есть три элемента, разделенных двумя слешами соответственно, то третий параметр %color -- это скорее всего цвет.
+                // Мы сверяем %color с таблицей цветов и если находим соответствие, считаем, что это цвет. Если в таблице цветов нет такого цвета, пишем ошибку в конце скрипта
+                // -- #linenumber, undefined color "%color" ---
+                if (count($complexColumn) == 3) {
+                    $this->_unrecognizedRows[] = '-- ' . $this->_rowCount . ' undefined color ' . $complexColumn[2] . ' --';
+                }
                 $color = 'Black';
             }
 
